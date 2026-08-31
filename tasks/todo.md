@@ -1,0 +1,18 @@
+# 任务清单
+
+- [x] `local-tools`：工作目录安全工具
+  - 验收：四个工具可执行；越界路径、未知工具、错误参数、超时和超长输出受控。
+  - 验证：`python -m pytest tests/test_tools.py -q`
+  - 文件：`pyproject.toml`、`src/coding_agent/{__init__,errors,tools}.py`、`tests/test_tools.py`
+- [ ] `model-client`：千问协议适配
+  - 验收：文本和 Tool Calls 可解析；HTTP/JSON 错误受控。
+  - 验证：`python -m pytest tests/test_model.py -q`
+- [ ] `agent-runtime`：历史与执行循环
+  - 验收：可连续调用工具、返回最终文本并受最大轮数约束。
+  - 验证：`python -m pytest tests/test_agent.py -q`
+- [ ] `cli-observability`：命令行入口和执行轨迹
+  - 验收：用户可指定工作目录和任务，并看到每一步。
+  - 验证：CLI 帮助测试和手工烟雾测试。
+- [ ] `verification-delivery`：真实 API、演示、README 和答辩材料
+  - 验收：真实端到端任务完成，提交物满足题目限制。
+  - 验证：完整测试、演示彩排和凭据扫描。

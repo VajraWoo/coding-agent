@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "minimal-coding-agent"
+version = "0.1.0"
+description = "A small coding agent with a self-implemented harness"
+requires-python = ">=3.11"
+dependencies = ["httpx>=0.28,<1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=9,<10"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+markers = ["live: calls the real model API"]
+
