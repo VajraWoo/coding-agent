@@ -90,6 +90,18 @@ def test_executes_tool_and_sends_observation_back_to_model():
     assert result.history[-1] == {"role": "assistant", "content": "文件已读取"}
 
 
+def test_reserves_last_round_for_tool_free_final_summary():
+    call = ToolCall(id="call_1", name="demo_tool", arguments={})
+    model = ScriptedModel([tool_response(call), text_response("最终总结")])
+    tools = StubTools([ToolResult("验证通过")])
+
+    result = Agent(model, tools, max_rounds=2).run("完成后总结")
+
+    assert result.final_text == "最终总结"
+    assert model.requests[0]["tools"] == tools.schemas()
+    assert model.requests[1]["tools"] is None
+
+
 def test_executes_all_tool_calls_in_model_order():
     first = ToolCall(id="call_1", name="first", arguments={"n": 1})
     second = ToolCall(id="call_2", name="second", arguments={"n": 2})
@@ -124,7 +136,8 @@ def test_stops_after_maximum_model_rounds():
         Agent(model, tools, max_rounds=2).run("永不结束的任务")
 
     assert len(model.requests) == 2
-    assert len(tools.calls) == 2
+    assert model.requests[-1]["tools"] is None
+    assert len(tools.calls) == 1
 
 
 @pytest.mark.parametrize("task", ["", "   ", None, 123])

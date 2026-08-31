@@ -1,3 +1,6 @@
+import io
+import sys
+
 from coding_agent.cli import build_parser, main
 from coding_agent.errors import ModelConfigurationError
 from coding_agent.model import ModelResponse, ToolCall
@@ -69,7 +72,7 @@ def test_main_runs_agent_and_displays_tool_progress(tmp_path, capsys):
         return scripted
 
     exit_code = main(
-        ["--workspace", str(tmp_path), "列出文件"],
+        ["--workspace", str(tmp_path), "--max-rounds", "2", "列出文件"],
         client_factory=client_factory,
     )
 
@@ -79,6 +82,7 @@ def test_main_runs_agent_and_displays_tool_progress(tmp_path, capsys):
     assert "list_files" in captured.out
     assert '"path": "."' in captured.out
     assert "成功" in captured.out
+    assert "正在生成最终总结" in captured.out
     assert "检查完成" in captured.out
     assert captured.err == ""
     assert factory_arguments == {
@@ -113,3 +117,26 @@ def test_main_reports_invalid_workspace(capsys, tmp_path):
     captured = capsys.readouterr()
     assert exit_code == 1
     assert "工作目录" in captured.err
+
+
+def test_main_does_not_crash_when_console_cannot_encode_model_emoji(
+    tmp_path, monkeypatch
+):
+    model = ScriptedModel([text_response("任务完成 ✅")])
+    output_bytes = io.BytesIO()
+    narrow_console = io.TextIOWrapper(
+        output_bytes,
+        encoding="gbk",
+        errors="strict",
+    )
+    monkeypatch.setattr(sys, "stdout", narrow_console)
+
+    exit_code = main(
+        ["--workspace", str(tmp_path), "执行任务"],
+        client_factory=lambda **kwargs: model,
+    )
+    narrow_console.flush()
+    rendered = output_bytes.getvalue().decode("gbk")
+
+    assert exit_code == 0
+    assert "任务完成" in rendered

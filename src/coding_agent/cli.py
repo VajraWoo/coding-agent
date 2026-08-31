@@ -50,6 +50,7 @@ def main(
     client_factory: Callable[..., Any] = QwenClient,
 ) -> int:
     """Run the CLI and return a process exit code."""
+    _configure_console_output()
     args = build_parser().parse_args(argv)
 
     try:
@@ -69,7 +70,7 @@ def main(
 
 def _print_event(event: AgentEvent) -> None:
     if event.kind == "model_request":
-        print(f"[第 {event.round_number} 轮] 正在询问模型下一步...")
+        print(f"[第 {event.round_number} 轮] {event.message}...")
     elif event.kind == "tool_call":
         arguments = json.dumps(event.arguments or {}, ensure_ascii=False)
         print(f"[工具] {event.tool_name} {arguments}")
@@ -84,6 +85,17 @@ def _preview(text: str, limit: int = 500) -> str:
     if len(text) <= limit:
         return text
     return text[:limit] + "\n...[终端显示已省略，完整结果仍已反馈给模型]"
+
+
+def _configure_console_output() -> None:
+    """Replace characters unsupported by a legacy Windows console encoding."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            try:
+                reconfigure(errors="replace")
+            except (OSError, ValueError):
+                pass
 
 
 def entrypoint() -> None:

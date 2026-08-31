@@ -94,14 +94,24 @@ class Agent:
         schemas = self._tools.schemas()
 
         for round_number in range(1, self._max_rounds + 1):
+            is_final_round = round_number == self._max_rounds
             self._emit(
                 on_event,
-                AgentEvent("model_request", "正在询问模型下一步", round_number),
+                AgentEvent(
+                    "model_request",
+                    "正在生成最终总结" if is_final_round else "正在询问模型下一步",
+                    round_number,
+                ),
             )
-            response = self._model.complete(history, tools=schemas)
+            response = self._model.complete(
+                history,
+                tools=None if is_final_round else schemas,
+            )
             history.append(deepcopy(response.assistant_message))
 
             if response.tool_calls:
+                if is_final_round:
+                    break
                 for call in response.tool_calls:
                     self._emit(
                         on_event,
