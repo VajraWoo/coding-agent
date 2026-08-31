@@ -5,7 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 import json
-from typing import Any, Callable, Literal, Protocol
+from typing import Any, Callable, Literal, Protocol, Sequence
 
 from .errors import AgentLimitError
 from .model import ModelResponse
@@ -83,15 +83,27 @@ class Agent:
         task: str,
         *,
         on_event: Callable[[AgentEvent], None] | None = None,
+        history: Sequence[dict[str, Any]] | None = None,
     ) -> AgentRunResult:
         """Run one user task until final model text or the round limit."""
         if not isinstance(task, str) or not task.strip():
             raise ValueError("任务必须是非空字符串")
 
-        history: list[dict[str, Any]] = [
-            {"role": "system", "content": self._system_prompt},
-            {"role": "user", "content": task.strip()},
-        ]
+        if history is None:
+            active_history: list[dict[str, Any]] = [
+                {"role": "system", "content": self._system_prompt},
+            ]
+        else:
+            if (
+                not isinstance(history, Sequence)
+                or isinstance(history, (str, bytes))
+                or not history
+                or any(not isinstance(message, dict) for message in history)
+                or history[0].get("role") != "system"
+            ):
+                raise ValueError("history 必须是以 system 消息开头的非空消息序列")
+            active_history = deepcopy(list(history))
+        active_history.append({"role": "user", "content": task.strip()})
         schemas = self._tools.schemas()
 
         for round_number in range(1, self._max_rounds + 1):
@@ -105,11 +117,11 @@ class Agent:
                 ),
             )
             response = self._model.complete(
-                history,
+                active_history,
                 tools=schemas,
                 tool_choice="none" if is_final_round else "auto",
             )
-            history.append(deepcopy(response.assistant_message))
+            active_history.append(deepcopy(response.assistant_message))
 
             if response.tool_calls:
                 if is_final_round:
@@ -126,7 +138,7 @@ class Agent:
                         ),
                     )
                     result = self._tools.execute(call.name, call.arguments)
-                    history.append(
+                    active_history.append(
                         {
                             "role": "tool",
                             "tool_call_id": call.id,
@@ -156,7 +168,7 @@ class Agent:
                 return AgentRunResult(
                     final_text=response.content,
                     rounds=round_number,
-                    history=tuple(deepcopy(history)),
+                    history=tuple(deepcopy(active_history)),
                 )
 
         raise AgentLimitError(

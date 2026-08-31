@@ -31,3 +31,7 @@ class AgentError(Exception):
 
 class AgentLimitError(AgentError):
     """Raised when the model does not finish within the configured rounds."""
+
+
+class ConversationBusyError(AgentError):
+    """Raised when a conversation already has an active model run."""
