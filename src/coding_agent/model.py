@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import json
 import os
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -55,6 +56,16 @@ class QwenClient:
         self._base_url = (
             base_url or os.getenv("DASHSCOPE_BASE_URL") or DEFAULT_BASE_URL
         ).rstrip("/")
+        parsed_base_url = urlsplit(self._base_url)
+        if (
+            parsed_base_url.scheme != "https"
+            or not parsed_base_url.hostname
+            or parsed_base_url.username is not None
+            or parsed_base_url.password is not None
+        ):
+            raise ModelConfigurationError(
+                "模型 Base URL 必须是有效的 HTTPS 地址，且不能包含账号密码。"
+            )
         self._model = model
         self._client = httpx.Client(timeout=timeout, transport=transport)
 

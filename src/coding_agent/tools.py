@@ -13,6 +13,15 @@ from .errors import ToolError, ToolValidationError
 
 _TRUNCATION_MARKER = "\n...[输出已截断]"
 _IGNORED_DIRECTORIES = {".git", ".venv", "__pycache__", ".pytest_cache"}
+_SENSITIVE_ENV_MARKERS = (
+    "KEY",
+    "TOKEN",
+    "SECRET",
+    "PASSWORD",
+    "CREDENTIAL",
+    "AUTH",
+    "COOKIE",
+)
 
 
 @dataclass(frozen=True)
@@ -200,6 +209,7 @@ class WorkspaceTools:
                 encoding="utf-8",
                 errors="replace",
                 shell=False,
+                env=_command_environment(),
                 timeout=self.command_timeout_seconds,
                 check=False,
             )
@@ -284,6 +294,15 @@ def _timeout_stream(stream: str | bytes | None) -> str:
     if isinstance(stream, bytes):
         return stream.decode("utf-8", errors="replace")
     return stream
+
+
+def _command_environment() -> dict[str, str]:
+    """Keep normal process settings while withholding likely credentials."""
+    return {
+        name: value
+        for name, value in os.environ.items()
+        if not any(marker in name.upper() for marker in _SENSITIVE_ENV_MARKERS)
+    }
 
 
 def _function_schema(

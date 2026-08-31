@@ -29,6 +29,11 @@ def test_missing_api_key_fails_before_sending_request(monkeypatch):
         QwenClient(api_key=None, base_url=BASE_URL)
 
 
+def test_rejects_plain_http_base_url_before_sending_secret():
+    with pytest.raises(ModelConfigurationError, match="HTTPS"):
+        QwenClient(api_key="test-secret", base_url="http://example.com/v1")
+
+
 def test_sends_openai_compatible_request_and_parses_text_response():
     captured = {}
 

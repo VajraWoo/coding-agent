@@ -100,6 +100,29 @@ def test_run_command_captures_exit_code_stdout_and_stderr(tmp_path: Path) -> Non
     assert payload == {"exit_code": 3, "stdout": "out\n", "stderr": "err\n", "timed_out": False}
 
 
+def test_run_command_does_not_inherit_sensitive_environment_variables(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    secret_name = "CODING_AGENT_TEST_SECRET_TOKEN"
+    monkeypatch.setenv(secret_name, "must-not-reach-child")
+    tools = WorkspaceTools(tmp_path)
+
+    result = tools.execute(
+        "run_command",
+        {
+            "argv": [
+                sys.executable,
+                "-c",
+                f"import os; print(os.getenv('{secret_name}', 'scrubbed'))",
+            ]
+        },
+    )
+
+    payload = json.loads(result.content)
+    assert result.is_error is False
+    assert payload["stdout"].strip() == "scrubbed"
+
+
 def test_run_command_times_out(tmp_path: Path) -> None:
     tools = WorkspaceTools(tmp_path, command_timeout_seconds=0.1)
 
