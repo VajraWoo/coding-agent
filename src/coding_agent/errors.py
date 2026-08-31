@@ -23,3 +23,11 @@ class ModelAPIError(ModelError):
 
 class ModelResponseError(ModelError):
     """Raised when a successful HTTP response violates the expected protocol."""
+
+
+class AgentError(Exception):
+    """Base class for controlled execution-loop failures."""
+
+
+class AgentLimitError(AgentError):
+    """Raised when the model does not finish within the configured rounds."""
