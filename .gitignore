@@ -5,5 +5,6 @@ __pycache__/
 *.py[cod]
 build/
 dist/
+*.egg-info/
+demo_run/
 软件工程专业推免项目_构建编程智能体.md
-

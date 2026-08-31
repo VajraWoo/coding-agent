@@ -1,0 +1,6 @@
+请检查这个计算器项目并完成以下任务：
+
+1. 在 calculator.py 中增加 subtract(left, right) 和 divide(left, right)。
+2. divide 遇到除数为 0 时抛出 ValueError，错误信息应清楚说明原因。
+3. 为新功能补充 pytest 测试，不要破坏已有 add 行为。
+4. 运行全部测试，确认通过后再结束。
