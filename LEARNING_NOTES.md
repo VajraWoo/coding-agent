@@ -74,3 +74,71 @@ ToolResult(content="给模型看的结果", is_error=False)
 
 编译和测试失败通常是 Agent 完成任务所需的反馈。模型看到退出码和错误输出后，才能继续修改。
 
+## 模块二：`model-client`
+
+### 1. 它解决什么问题？
+
+千问运行在远端，Harness 需要通过 HTTP 把“对话历史 + 可用工具说明”发给它，再把返回内容转换成本项目能够理解的结构。`model-client` 是远端模型与本地执行循环之间的协议适配层。
+
+我们没有使用 Agent 框架，也没有使用 OpenAI 客户端 SDK。项目自己用 `httpx` 发请求，自己检查 HTTP 状态、解析 JSON 和验证 Tool Calls；这正是考核要求关注的 Harness 核心逻辑。
+
+### 2. 输入和输出是什么？
+
+输入是 OpenAI 兼容格式的 `messages` 和工具 JSON Schema。请求发到 `/chat/completions`，默认模型是 `qwen3-coder-plus`。API Key 从 `DASHSCOPE_API_KEY` 环境变量读取，不写进代码和 Git。
+
+输出统一为：
+
+```python
+ModelResponse(
+    content="模型最终文本或 None",
+    tool_calls=(ToolCall(id, name, arguments), ...),
+    assistant_message={...},
+)
+```
+
+`tool_calls` 方便下一模块直接执行；`assistant_message` 保留协议原貌，方便原样加入历史。这两个用途不同，不能只留其中一个。
+
+### 3. 核心代码怎样工作？
+
+1. 组装 `model`、`messages`、`tools` 和 `tool_choice=auto`。
+2. 使用 Bearer Token 发起 HTTP POST。
+3. 检查状态码并解析响应 JSON。
+4. 从第一个 `choice.message` 取出文本和多个 Tool Calls。
+5. 将每个 `function.arguments` 从 JSON 字符串解析为字典；不合法就受控报错，绝不直接执行。
+
+这里有一个关键分工：模型只“建议调用什么”，客户端只“解析建议”，真正允许哪些工具、参数是否合法、如何执行，仍由 `local-tools` 决定。
+
+### 4. 它可能怎样失败，有什么边界？
+
+- 没有 API Key：启动时给出明确配置错误。
+- 网络错误或超时：转换为 `ModelAPIError`，不会留下难懂的底层堆栈作为正常用户结果。
+- 401、429、500 等 HTTP 错误：报告状态码，但错误文本不包含 API Key。
+- 服务返回非 JSON、缺少 `choices`、消息角色不对、参数 JSON 损坏：拒绝该响应，不能把畸形数据交给执行层。
+- 这个模块只验证协议结构，不判断工具是否存在；工具白名单属于执行层职责。
+
+服务地址可由 `DASHSCOPE_BASE_URL` 配置。默认提供百炼通用兼容地址；真实冒烟测试使用了当前业务空间创建 Key 时给出的 OpenAI 兼容地址。
+
+### 5. 怎样证明它正确？
+
+真实 TDD 记录：
+
+1. 先写14个测试，第一次因模型客户端和错误类型尚不存在而失败（RED）。
+2. 实现最小 HTTP 客户端与解析器后，14项全部通过（GREEN）。
+3. 测试覆盖文本回复、多个 Tool Calls、请求体、鉴权头、缺失 Key、超时、401/429/500、非 JSON、空响应和错误参数。
+4. 再使用真实千问 API 请求模型读取 `SPEC.md`，模型成功返回 `read_file` 工具调用及正确参数。
+
+真实测试第一次因临时 `python -c` 没有自动把 `src` 加入模块搜索路径而失败。根据错误栈比较 pytest 配置后，只在冒烟命令中设置 `PYTHONPATH=src`，相同请求随即通过；这说明根因在启动环境，不在模型客户端。
+
+### 可能的面试问题
+
+**为什么要自己解析 Tool Calls？**
+
+题目要考察 Harness。若把消息格式、Tool Call 解析和错误处理全部交给 Agent SDK，就无法体现核心循环是自己实现的。我们只使用通用 HTTP 库。
+
+**为什么既保存结构化 ToolCall，又保存原始 assistant message？**
+
+前者便于安全执行；后者需要作为下一次请求的历史发回模型，里面的调用 ID 用于和工具结果一一对应。
+
+**为什么不把 API Key 写在配置文件里？**
+
+密钥一旦进入 Git 历史，即使后来删除也可能被找回。环境变量让程序能读取密钥，但仓库不保存密钥。

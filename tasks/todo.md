@@ -4,9 +4,10 @@
   - 验收：四个工具可执行；越界路径、未知工具、错误参数、超时和超长输出受控。
   - 验证：`python -m pytest tests/test_tools.py -q`
   - 文件：`pyproject.toml`、`src/coding_agent/{__init__,errors,tools}.py`、`tests/test_tools.py`
-- [ ] `model-client`：千问协议适配
+- [x] `model-client`：千问协议适配
   - 验收：文本和 Tool Calls 可解析；HTTP/JSON 错误受控。
   - 验证：`python -m pytest tests/test_model.py -q`
+  - 文件：`src/coding_agent/{errors,model}.py`、`tests/test_model.py`
 - [ ] `agent-runtime`：历史与执行循环
   - 验收：可连续调用工具、返回最终文本并受最大轮数约束。
   - 验证：`python -m pytest tests/test_agent.py -q`

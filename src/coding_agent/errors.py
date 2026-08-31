@@ -1,4 +1,4 @@
-"""Errors raised for expected, model-caused tool failures."""
+"""Controlled errors raised at the Harness boundary."""
 
 
 class ToolError(Exception):
@@ -8,3 +8,18 @@ class ToolError(Exception):
 class ToolValidationError(ToolError):
     """Raised when a model-generated tool request is invalid or unsafe."""
 
+
+class ModelError(Exception):
+    """Base class for controlled model-client failures."""
+
+
+class ModelConfigurationError(ModelError):
+    """Raised when required local model configuration is missing."""
+
+
+class ModelAPIError(ModelError):
+    """Raised when the remote API cannot produce a usable response."""
+
+
+class ModelResponseError(ModelError):
+    """Raised when a successful HTTP response violates the expected protocol."""
