@@ -19,3 +19,13 @@
 - [ ] `verification-delivery`：真实 API、演示、README 和答辩材料
   - 验收：真实端到端任务完成，提交物满足题目限制。
   - 验证：完整测试、演示彩排和凭据扫描。
+- [x] `permission-policy`：只读模式和开发审批
+  - 验收：只读模式无法产生副作用；开发模式的写入和命令必须批准。
+  - 验证：`python -m pytest tests/test_policy.py -q`
+  - 文件：`src/coding_agent/policy.py`、`tests/test_policy.py`
+- [ ] `conversation-runtime`：连续提问与会话状态
+  - 验收：第二次提问继承第一次完整 history；一次只能运行一个任务。
+  - 验证：`python -m pytest tests/test_conversation.py -q`
+- [ ] `web-ui`：本地浏览器交互界面
+  - 验收：创建会话、发送消息、查看轨迹、审批和最终回答均可用。
+  - 验证：`python -m pytest tests/test_web.py -q` 加浏览器手工检查。
