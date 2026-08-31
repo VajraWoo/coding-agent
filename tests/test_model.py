@@ -78,6 +78,28 @@ def test_sends_openai_compatible_request_and_parses_text_response():
     assert result.assistant_message == {"role": "assistant", "content": "任务完成"}
 
 
+def test_can_explicitly_disable_tool_calls_for_final_summary():
+    captured = {}
+
+    def handler(request):
+        captured["body"] = json.loads(request.content)
+        return json_response(
+            {"choices": [{"message": {"role": "assistant", "content": "总结"}}]}
+        )
+
+    tools = [{"type": "function", "function": {"name": "read_file"}}]
+    client = make_client(handler)
+
+    client.complete(
+        [{"role": "user", "content": "总结"}],
+        tools=tools,
+        tool_choice="none",
+    )
+
+    assert captured["body"]["tools"] == tools
+    assert captured["body"]["tool_choice"] == "none"
+
+
 def test_parses_multiple_tool_calls_and_preserves_assistant_message():
     message = {
         "role": "assistant",

@@ -6,7 +6,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 import json
 import os
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlsplit
 
 import httpx
@@ -74,6 +74,7 @@ class QwenClient:
         messages: list[dict[str, Any]],
         *,
         tools: list[dict[str, Any]] | None = None,
+        tool_choice: Literal["auto", "none"] = "auto",
     ) -> ModelResponse:
         """Send one completion request and validate its assistant message."""
         payload: dict[str, Any] = {
@@ -82,7 +83,7 @@ class QwenClient:
         }
         if tools:
             payload["tools"] = tools
-            payload["tool_choice"] = "auto"
+            payload["tool_choice"] = tool_choice
 
         try:
             response = self._client.post(

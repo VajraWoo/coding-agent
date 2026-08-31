@@ -5,7 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 import json
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Literal, Protocol
 
 from .errors import AgentLimitError
 from .model import ModelResponse
@@ -26,6 +26,7 @@ class ModelClient(Protocol):
         messages: list[dict[str, Any]],
         *,
         tools: list[dict[str, Any]] | None = None,
+        tool_choice: Literal["auto", "none"] = "auto",
     ) -> ModelResponse: ...
 
 
@@ -105,7 +106,8 @@ class Agent:
             )
             response = self._model.complete(
                 history,
-                tools=None if is_final_round else schemas,
+                tools=schemas,
+                tool_choice="none" if is_final_round else "auto",
             )
             history.append(deepcopy(response.assistant_message))
 

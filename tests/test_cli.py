@@ -10,7 +10,7 @@ class ScriptedModel:
     def __init__(self, responses):
         self.responses = list(responses)
 
-    def complete(self, messages, *, tools=None):
+    def complete(self, messages, *, tools=None, tool_choice="auto"):
         return self.responses.pop(0)
 
 

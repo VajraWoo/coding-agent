@@ -31,8 +31,14 @@ class ScriptedModel:
         self.responses = list(responses)
         self.requests = []
 
-    def complete(self, messages, *, tools=None):
-        self.requests.append({"messages": deepcopy(messages), "tools": deepcopy(tools)})
+    def complete(self, messages, *, tools=None, tool_choice="auto"):
+        self.requests.append(
+            {
+                "messages": deepcopy(messages),
+                "tools": deepcopy(tools),
+                "tool_choice": tool_choice,
+            }
+        )
         if not self.responses:
             raise AssertionError("模型被调用次数超过测试脚本")
         return self.responses.pop(0)
@@ -99,7 +105,9 @@ def test_reserves_last_round_for_tool_free_final_summary():
 
     assert result.final_text == "最终总结"
     assert model.requests[0]["tools"] == tools.schemas()
-    assert model.requests[1]["tools"] is None
+    assert model.requests[0]["tool_choice"] == "auto"
+    assert model.requests[1]["tools"] == tools.schemas()
+    assert model.requests[1]["tool_choice"] == "none"
 
 
 def test_executes_all_tool_calls_in_model_order():
@@ -136,7 +144,8 @@ def test_stops_after_maximum_model_rounds():
         Agent(model, tools, max_rounds=2).run("永不结束的任务")
 
     assert len(model.requests) == 2
-    assert model.requests[-1]["tools"] is None
+    assert model.requests[-1]["tools"] == tools.schemas()
+    assert model.requests[-1]["tool_choice"] == "none"
     assert len(tools.calls) == 1
 
 
