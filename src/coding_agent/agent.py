@@ -43,6 +43,7 @@ class AgentEvent:
     round_number: int
     tool_name: str | None = None
     is_error: bool | None = None
+    arguments: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -108,6 +109,7 @@ class Agent:
                             f"模型请求调用 {call.name}",
                             round_number,
                             tool_name=call.name,
+                            arguments=deepcopy(call.arguments),
                         ),
                     )
                     result = self._tools.execute(call.name, call.arguments)

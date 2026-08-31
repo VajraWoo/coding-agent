@@ -12,9 +12,10 @@
   - 验收：可连续调用工具、返回最终文本并受最大轮数约束。
   - 验证：`python -m pytest tests/test_agent.py -q`
   - 文件：`src/coding_agent/{agent,errors}.py`、`tests/test_agent.py`
-- [ ] `cli-observability`：命令行入口和执行轨迹
+- [x] `cli-observability`：命令行入口和执行轨迹
   - 验收：用户可指定工作目录和任务，并看到每一步。
   - 验证：CLI 帮助测试和手工烟雾测试。
+  - 文件：`src/coding_agent/{cli,__main__}.py`、`tests/test_cli.py`、`pyproject.toml`
 - [ ] `verification-delivery`：真实 API、演示、README 和答辩材料
   - 验收：真实端到端任务完成，提交物满足题目限制。
   - 验证：完整测试、演示彩排和凭据扫描。

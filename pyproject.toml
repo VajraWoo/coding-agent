@@ -9,6 +9,9 @@ description = "A small coding agent with a self-implemented harness"
 requires-python = ">=3.11"
 dependencies = ["httpx>=0.28,<1"]
 
+[project.scripts]
+coding-agent = "coding_agent.cli:entrypoint"
+
 [project.optional-dependencies]
 dev = ["pytest>=9,<10"]
 
@@ -16,4 +19,3 @@ dev = ["pytest>=9,<10"]
 pythonpath = ["src"]
 testpaths = ["tests"]
 markers = ["live: calls the real model API"]
-
